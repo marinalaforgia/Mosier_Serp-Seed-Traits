@@ -1,5 +1,6 @@
 #### Seed Analysis for CBS Undergraduate Research Conference #### 
 
+<<<<<<< HEAD
 rm(list=ls())
 
 #library load
@@ -22,3 +23,11 @@ SB_Traits_joined <- left_join(Traits,SB_joined, by = "Species")
 
 #Just examining data to understand things
 Avena_fatua <- SB_joined %>% filter(Species == "Avena fatua")
+
+Treatment <- read.csv("Data/WE_Treatment.csv")
+
+Treatment$Serpentine <- ifelse(Treatment$Plot %in% c(1,2,7:14,21,41:46,84), 
+                               "HS", 
+                               ifelse(Treatment$Serpentine == "N",
+                                      Treatment$Serpentine,
+                                      "LS"))
