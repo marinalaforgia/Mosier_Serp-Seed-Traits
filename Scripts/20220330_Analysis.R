@@ -7,16 +7,25 @@ library(plyr)
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
+library(devtools)
+install_github("vqv/ggbiplot")
 
 #Data
 Traits <- read.csv("Data/20220329_Seed-Traits_cleaning.csv")
 Cover <- read.csv("Data/Core_All-Years_2021.csv")
 Species <- read.csv("Data/McL_80SitesSpeciesTraits_012615.csv")
-SB <- read.csv("Data/Seedbank-Data_2015 - Seedbank_WateringExp2016_CLEAN.csv")
+#SB <- read.csv("Data/Seedbank-Data_2015 - Seedbank_WateringExp2016_CLEAN.csv")
+SB <- read.csv("Data/Seedbank_WateringExp2016_CLEAN.csv") # Marina's file path
 Plots <- read.csv("Data/WE_Treatment.csv") 
+
 
 #### Prepping Data ####
 
+Plots$Serpentine <- ifelse(Plots$Plot %in% c(1,2,7:14,21,41:46,84), 
+                               "HS",
+                               ifelse(Plots$Serpentine == "N",
+                                      Plots$Serpentine,
+                                      "LS"))
 
 SB.Cov <- c(unique(SB$Species), unique(Cover$Species_Name_J12))
 
@@ -38,12 +47,6 @@ SB_Traits_joined <- merge(SB_joined, Traits[,-c(1,3,4,5,6,9,10,11,13,16)],  by.x
 #Remove NA data
 SB_Traits_joined <- SB_Traits_joined[complete.cases(SB_Traits_joined),]
 
-#Harsh+Lush Serp
-SB_Traits_joined$Serpentine <- ifelse(SB_Traits_joined$Plot %in% c(1,2,7:14,21,41:46,84), 
-                               "HS",
-                               ifelse(SB_Traits_joined$Serpentine == "N",
-                                      SB_Traits_joined$Serpentine,
-                                      "LS"))
 
 ####CWM####
 
@@ -57,8 +60,7 @@ Plot.cwm <- SB_Traits_joined            %>% group_by(Plot)                     %
   ldd.cwm = weighted.mean(ldd, n.seeds)
 )
 
-Plot.cwm$Serpentine <- ifelse(Plot.cwm$Plot %in% c(1,2,7:14,21,41:46,84),"HS", ifelse(Plot.cwm$Plot == "N", Plot.cwm$Plot, "LS"))
-#Redundant?
+Plot.cwm <- merge(Plot.cwm, Plots[,c(1,3)], by = "Plot")
 
 ####_Native/Invasive####
 nat.inv.cwm <- SB_Traits_joined %>% group_by(nat.inv) %>% summarize(
