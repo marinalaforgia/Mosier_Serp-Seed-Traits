@@ -212,5 +212,5 @@ ordiplot(SB.sum.nmds)
 ordihull(SB.sum.nmds, groups = SB.sum.wide$Serpentine, draw = "polygon", col = c("red", "green", "blue"), label = T)
 
 env <- SB.sum.wide[,c(95:100)]
-en <-envfit(SB.sum.nmds, env, permutations = 9999)
+en <- envfit(SB.sum.nmds, env, permutations = 9999)
 plot(en)
