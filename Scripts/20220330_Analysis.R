@@ -9,6 +9,7 @@ library(tidyverse)
 library(ggplot2)
 library(vegan)
 library(sjstats)
+library(emmeans)
 
 #Data
 Traits <- read.csv("Data/20220418_Seed-Traits_cleaning.csv")
@@ -183,3 +184,12 @@ env <- SB.sum.wide[,c(95:100)]
 colnames(env) <- c("Shape", "Settling Time", "Mass", "Wing Loading", "Height", "LDD")
 en <- envfit(SB.sum.nmds, env, permutations = 9999)
 plot(en)
+
+#### Linear Models ####
+nat.inv.cwm$fun.group <- paste(nat.inv.cwm$nat.inv, nat.inv.cwm$group)
+nat.inv.cwm <- filter(nat.inv.cwm, fun.group != "native grass")
+
+m.shape <- lm(log(mass.morph.mg.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
+plot(m.shape)
+summary(m.shape)
+pairs(emmeans(m.shape, ~ Serpentine * fun.group))
