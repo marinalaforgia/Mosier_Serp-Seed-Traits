@@ -9,13 +9,14 @@ library(tidyverse)
 library(ggplot2)
 library(ggfortify) # ggbiplot is in this package!
 library(vegan)
+library(Rmisc)
 
 #Data
-Traits <- read.csv("Data/20220418_Seed-Traits_cleaning.csv")
+Traits <- read.csv("Data/20220329_Seed-Traits_cleaning.csv")
 Cover <- read.csv("Data/Core_All-Years_2021.csv")
 Species <- read.csv("Data/McL_80SitesSpeciesTraits_012615.csv")
-#SB <- read.csv("Data/Seedbank-Data_2015 - Seedbank_WateringExp2016_CLEAN.csv")
-SB <- read.csv("Data/Seedbank_WateringExp2016_CLEAN.csv") # Marina's file path
+SB <- read.csv("Data/Seedbank-Data_2015 - Seedbank_WateringExp2016_CLEAN.csv")
+#SB <- read.csv("Data/Seedbank_WateringExp2016_CLEAN.csv") # Marina's file path
 Plots <- read.csv("Data/WE_Treatment.csv") 
 
 
@@ -40,9 +41,6 @@ SB.sum <- ddply(SB, .(Plot, Species), summarize, n.seeds = sum(n_seedlings, na.r
 SB_joined <- left_join(SB.sum, Plots, by = "Plot") %>% select(Plot, Species, Serpentine, n.seeds)
 
 SB_Traits_joined <- merge(SB_joined, Traits[,-c(1,4,5,6,9,10,11,13,16)],  by.x = "Species", by.y = "Species_Name_J12")
-
-#Remove NA data, I dont think this is necessary after the above changes
-#SB_Traits_joined <- SB_Traits_joined[complete.cases(SB_Traits_joined),]
 
 
 ####CWM####
@@ -93,11 +91,6 @@ Traits$ldd.sqrt <- sqrt(Traits$ldd)
 Traits.pca <- prcomp(Traits[,c(18,22:26)], scale = TRUE)
 biplot(Traits.pca)
 
-
-#Library Load
-library(factoextra)
-library(ggbiplot)
-
 #PCA
 hist(log(Plot.cwm$shape.final.cwm))
 hist(sqrt(Plot.cwm$set.time.mpsec.cwm))
@@ -133,34 +126,70 @@ Plot.cwm <- cbind(Plot.cwm, Plot.pca$x[,1:2])
 autoplot(Plot.pca, data = Plot.cwm, loadings = T, loadings.label = T, label = F, loadings.label.vjust = -1.5, loadings.label.hjust = .6, col = 'appendages', shape = 'group') +
   theme_classic()  
 
-####_factoextra####
 
-fviz_pca_var(Plot.pca,
-             col.var = "contrib", # Color by contributions to the PC
-             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE     # Avoid text overlapping
-)
+####Boxplots####
 
-
-
-####Barplots####
-
-#Basic Barplot
-library(Rmisc)
-
-Barplot <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = shape.final.cwm)) + geom_boxplot()
-Barplot
-
+#Shape.final.cwm
 ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = shape.final.cwm, col = nat.inv)) + 
   geom_boxplot() +
   facet_wrap(~group)
+##Vicia- legume, competitively dominates N communities, large seed = large seedling
+
+#set.time.mpsec.cwm
+ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = set.time.mpsec.cwm, col = nat.inv)) + 
+  geom_boxplot() +
+  facet_wrap(~group)
+
+#mass.morph.cwm
+ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = mass.morph.mg.cwm, col = nat.inv)) + 
+  geom_boxplot() +
+  facet_wrap(~group)
+
+#wing.loading.cwm
+ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = wing.loading.cwm, col = nat.inv)) + 
+  geom_boxplot() +
+  facet_wrap(~group)
+
+#height.cwm
+ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = height.cm.cwm, col = nat.inv)) + 
+  geom_boxplot() +
+  facet_wrap(~group)
   
+#ldd.cwm
+ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = ldd.cwm, col = nat.inv)) + 
+  geom_boxplot() +
+  facet_wrap(~group)
 
 #Stacked Barplot
 
-
 stack.barplot <- ggplot(data = Plot.cwm, mapping = aes(x = Plot, y = shape.final.cwm, fill = Serpentine)) + geom_bar(stat="identity")
 stack.barplot
+
+####BarPlots####
+
+#Shape
+shape.final.bar <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = shape.final.cwm)) + geom_bar(stat="identity")
+shape.final.bar
+
+#Set.time
+set.time.bar <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = set.time.mpsec.cwm)) + geom_bar(stat="identity")
+set.time.bar
+
+#Mass
+mass.bar <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = mass.morph.mg.cwm)) + geom_bar(stat="identity")
+mass.bar
+
+#Wing.loading
+wing.loading.bar <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = wing.loading.cwm)) + geom_bar(stat="identity")
+wing.loading.bar
+
+#Height
+height.bar <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = height.cm.cwm)) + geom_bar(stat="identity")
+height.bar
+
+#ldd
+ldd.bar <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = ldd.cwm)) + geom_bar(stat="identity")
+ldd.bar
 
 #### NMDS plot ####
 plot.cwm.nmds <- metaMDS(Plot.cwm[,2:7], k = 3) 
