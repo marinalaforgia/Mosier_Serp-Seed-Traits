@@ -10,6 +10,8 @@ library(ggplot2)
 library(vegan)
 library(Rmisc)
 library(sjstats)
+library(emmeans)
+library(ggfortify)
 
 #Data
 Traits <- read.csv("Data/20220329_Seed-Traits_cleaning.csv")
@@ -50,7 +52,7 @@ SB_Traits_joined <- merge(SB_joined, Traits[,-c(1,4,5,6,9,10,11,13,16)],  by.x =
 
 ####CWM####
 
-####_Plot####
+#Plot
 Plot.cwm <- SB_Traits_joined %>% group_by(Plot)  %>% summarize(
   shape.final.cwm = weighted.mean(shape.final, n.seeds),
   set.time.mpsec.cwm = weighted.mean(set.time.mpsec, n.seeds),
@@ -62,7 +64,7 @@ Plot.cwm <- SB_Traits_joined %>% group_by(Plot)  %>% summarize(
 
 Plot.cwm <- merge(Plot.cwm, Plots[,c(1,3)], by = "Plot")
 
-####_Native/Invasive####
+#Native/Invasive
 nat.inv.cwm <- SB_Traits_joined %>% group_by(nat.inv, Plot, group) %>% summarize(
   shape.final.cwm = weighted.mean(shape.final, n.seeds),
   set.time.mpsec.cwm = weighted.mean(set.time.mpsec, n.seeds),
@@ -74,7 +76,7 @@ nat.inv.cwm <- SB_Traits_joined %>% group_by(nat.inv, Plot, group) %>% summarize
 
 nat.inv.cwm <- merge(nat.inv.cwm, Plots[,c(1,3)], by = "Plot")
 
-####_Forb/Grass####
+#Forb/Grass
 group.cwm <- SB_Traits_joined %>% group_by(group) %>% summarize(
   shape.final.cwm = weighted.mean(shape.final, n.seeds),
   set.time.mpsec.cwm = weighted.mean(set.time.mpsec, n.seeds),
@@ -86,7 +88,9 @@ group.cwm <- SB_Traits_joined %>% group_by(group) %>% summarize(
 
 
 
-#PCA
+
+####PCA####
+
 hist(log(Plot.cwm$shape.final.cwm))
 hist(sqrt(Plot.cwm$set.time.mpsec.cwm))
 hist(log(Plot.cwm$mass.morph.mg.cwm))
@@ -100,19 +104,7 @@ Plot.cwm$mass.morph.mg.cwm.log <- log(Plot.cwm$mass.morph.mg.cwm)
 Plot.cwm$wing.loading.cwm.log <- log(Plot.cwm$wing.loading.cwm)
 Plot.cwm$ldd.cwm.sqrt <- sqrt(Plot.cwm$ldd.cwm)
 
-Plot.pca <- prcomp(Plot.cwm[,c(6,9:13)], scale = TRUE)
-
-# maybe try plotting pc3 and pc4
-summary(Plot.pca)
-biplot(Plot.pca)
-Plot.cwm <- cbind(Plot.cwm, Plot.pca$x)
-
-autoplot(Plot.pca, data = Plot.cwm, loadings = T, loadings.label = T, label = F, loadings.label.vjust = -1.5, loadings.label.hjust = .6, col = 'Serpentine') +
-  theme_classic() 
-
-####_ggbiplot####
-Plot.serp <- Plot.cwm$Serpentine
-
+#PCA Remnants (not sure where work went- will redo if necessary)
 ggbiplot(Plot.pca, obs.scale = 1, var.scale = 1,
          groups = Plot.serp)
 
@@ -121,73 +113,11 @@ Plot.cwm <- cbind(Plot.cwm, Plot.pca$x[,1:2])
 autoplot(Plot.pca, data = Plot.cwm, loadings = T, loadings.label = T, label = F, loadings.label.vjust = -1.5, loadings.label.hjust = .6, col = 'appendages', shape = 'group') +
   theme_classic()  
 
+####Barplots####
 
-####Boxplots####
-
-Boxplot <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = shape.final.cwm)) + geom_boxplot()
-Boxplot
-
-#Shape.final.cwm
-ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = shape.final.cwm, col = nat.inv)) + 
-  geom_boxplot() +
-  facet_wrap(~group)
-##Vicia- legume, competitively dominates N communities, large seed = large seedling
-
-#set.time.mpsec.cwm
-ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = set.time.mpsec.cwm, col = nat.inv)) + 
-  geom_boxplot() +
-  facet_wrap(~group)
-
-#mass.morph.cwm
-ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = mass.morph.mg.cwm, col = nat.inv)) + 
-  geom_boxplot() +
-  facet_wrap(~group)
-
-#wing.loading.cwm
-ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = wing.loading.cwm, col = nat.inv)) + 
-  geom_boxplot() +
-  facet_wrap(~group)
-
-#height.cwm
-ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = height.cm.cwm, col = nat.inv)) + 
-  geom_boxplot() +
-  facet_wrap(~group)
-  
-#ldd.cwm
-ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = ldd.cwm, col = nat.inv)) + 
-  geom_boxplot() +
-  facet_wrap(~group)
-
-
-####BarPlots####
-
-#Shape
-shape.final.bar <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = shape.final.cwm)) + geom_bar(stat="identity")
-shape.final.bar
-
-#Set.time
-set.time.bar <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = set.time.mpsec.cwm)) + geom_bar(stat="identity")
-set.time.bar
-
-#Mass
-mass.bar <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = mass.morph.mg.cwm)) + geom_bar(stat="identity")
-mass.bar
-
-#Wing.loading
-wing.loading.bar <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = wing.loading.cwm)) + geom_bar(stat="identity")
-wing.loading.bar
-
-#Height
-height.bar <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = height.cm.cwm)) + geom_bar(stat="identity")
-height.bar
-
-#ldd
-ldd.bar <- ggplot(data = Plot.cwm, mapping = aes(x = Serpentine, y = ldd.cwm)) + geom_bar(stat="identity")
-ldd.bar
-
-# Bar plot
+#Prep
 nat.inv.cwm.sum <- nat.inv.cwm %>% 
-#  filter(nat.inv.cwm, !(nat.inv == "native" & grass.forb == "grass")) %>%
+  #  filter(nat.inv.cwm, !(nat.inv == "native" & grass.forb == "grass")) %>%
   group_by(nat.inv, group, Serpentine) %>%
   summarize(
     shape.cwm = mean(shape.final.cwm),
@@ -207,6 +137,7 @@ nat.inv.cwm.sum <- nat.inv.cwm %>%
 nat.inv.cwm.sum$fun.group <- paste(nat.inv.cwm.sum$nat.inv, nat.inv.cwm.sum$group)
 nat.inv.cwm.sum <- filter(nat.inv.cwm.sum, fun.group != "native grass")
 
+#
 ggplot(nat.inv.cwm.sum, aes(x = Serpentine, y = mass.cwm, fill = fun.group)) +
   geom_bar(stat="identity", position = position_dodge()) +
   geom_errorbar(aes(ymin = mass.cwm - mass.cwm.se, ymax = mass.cwm + mass.cwm.se), position = position_dodge(.9), width = 0.2) +
@@ -215,21 +146,80 @@ ggplot(nat.inv.cwm.sum, aes(x = Serpentine, y = mass.cwm, fill = fun.group)) +
     legend.title = element_blank()
   ) +
   labs(y = "CWM Wing Loading (mass/area)")
-  
-ggplot(nat.inv.cwm.sum, aes(x = Serpentine, y = wing.cwm, fill = fun.group)) +
-  geom_bar(stat="identity", position = position_dodge()) +
-  geom_errorbar(aes(ymin = wing.cwm - wing.cwm.se, ymax = wing.cwm + wing.cwm.se), position = position_dodge(.9), width = 0.2)
-  
+##able to delete?
+
+#Wing.bar
 ggplot(nat.inv.cwm.sum, aes(x = Serpentine, y = wing.cwm, fill = fun.group)) +
   geom_bar(stat="identity", position = position_dodge()) +
   geom_errorbar(aes(ymin = wing.cwm - wing.cwm.se, ymax = wing.cwm + wing.cwm.se), position = position_dodge(.9), width = 0.2)
 
-#Stacked Barplot
+#shape.bar
+ggplot(nat.inv.cwm.sum, aes(x = Serpentine, y = shape.cwm, fill = fun.group)) +
+  geom_bar(stat="identity", position = position_dodge()) +
+  geom_errorbar(aes(ymin = shape.cwm - shape.cwm.se, ymax = shape.cwm + shape.cwm.se), position = position_dodge(.9), width = 0.2)
 
-stack.barplot <- ggplot(data = Plot.cwm, mapping = aes(x = Plot, y = shape.final.cwm, fill = Serpentine)) + geom_bar(stat="identity")
-stack.barplot
+#ldd.bar
+ggplot(nat.inv.cwm.sum, aes(x = Serpentine, y = ldd.cwm, fill = fun.group)) +
+  geom_bar(stat="identity", position = position_dodge()) +
+  geom_errorbar(aes(ymin = ldd.cwm - ldd.cwm.se, ymax = ldd.cwm + ldd.cwm.se), position = position_dodge(.9), width = 0.2)
+
+#height.bar
+ggplot(nat.inv.cwm.sum, aes(x = Serpentine, y = height.cwm, fill = fun.group)) +
+  geom_bar(stat="identity", position = position_dodge()) +
+  geom_errorbar(aes(ymin = height.cwm - height.cwm.se, ymax = height.cwm + height.cwm.se), position = position_dodge(.9), width = 0.2)
+
+#mass.bar
+ggplot(nat.inv.cwm.sum, aes(x = Serpentine, y = mass.cwm, fill = fun.group)) +
+  geom_bar(stat="identity", position = position_dodge()) +
+  geom_errorbar(aes(ymin = mass.cwm - mass.cwm.se, ymax = mass.cwm + mass.cwm.se), position = position_dodge(.9), width = 0.2)
+
+#set.time.bar
+ggplot(nat.inv.cwm.sum, aes(x = Serpentine, y = set.time.cwm, fill = fun.group)) +
+  geom_bar(stat="identity", position = position_dodge()) +
+  geom_errorbar(aes(ymin = set.time.cwm - set.time.cwm.se, ymax = set.time.cwm + set.time.cwm.se), position = position_dodge(.9), width = 0.2)
+
+
+####Boxplots####
+
+#Shape.box
+
+ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = shape.final.cwm, col = nat.inv)) + 
+  geom_boxplot() +
+  facet_wrap(~group)
+
+#Set.time.box
+
+ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = set.time.mpsec.cwm, col = nat.inv)) + 
+  geom_boxplot() +
+  facet_wrap(~group)
+
+#mass.box
+
+ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = mass.morph.mg.cwm, col = nat.inv)) + 
+  geom_boxplot() +
+  facet_wrap(~group)
+
+#wing.loading.box
+
+ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = wing.loading.cwm, col = nat.inv)) + 
+  geom_boxplot() +
+  facet_wrap(~group)
+
+#height.box
+
+ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = height.cm.cwm, col = nat.inv)) + 
+  geom_boxplot() +
+  facet_wrap(~group)
+
+#ldd.box
+
+ggplot(data = nat.inv.cwm, mapping = aes(x = Serpentine, y = ldd.cwm, col = nat.inv)) + 
+  geom_boxplot() +
+  facet_wrap(~group)
+
 
 #### NMDS plot ####
+#(still running into problems on Emma's end)
 plot.cwm.nmds <- metaMDS(Plot.cwm[,2:7], k = 3) 
 
 stressplot(plot.cwm.nmds)
@@ -255,3 +245,47 @@ env <- SB.sum.wide[,c(95:100)]
 colnames(env) <- c("Shape", "Settling Time", "Mass", "Wing Loading", "Height", "LDD")
 en <- envfit(SB.sum.nmds, env, permutations = 9999)
 plot(en)
+
+#### Linear Models ####
+nat.inv.cwm$fun.group <- paste(nat.inv.cwm$nat.inv, nat.inv.cwm$group)
+nat.inv.cwm <- filter(nat.inv.cwm, fun.group != "native grass")
+
+#m.shape
+m.shape <- lm(log(shape.final.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
+plot(m.shape)
+summary(m.shape)
+pairs(emmeans(m.shape, ~ Serpentine * fun.group))
+
+#m.set.time
+m.set.time <- lm(log(set.time.mpsec.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
+plot(m.set.time)
+summary(m.set.time)
+pairs(emmeans(m.set.time, ~ Serpentine * fun.group))
+
+#m.mass
+m.mass <- lm(log(mass.morph.mg.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
+plot(m.mass)
+summary(m.mass)
+pairs(emmeans(m.mass, ~ Serpentine * fun.group))
+
+#m.wing.loading
+m.wing.loading <- lm(log(wing.loading.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
+plot(m.wing.loading)
+summary(m.wing.loading)
+pairs(emmeans(m.wing.loading, ~ Serpentine * fun.group))
+
+#m.height
+m.height <- lm(log(height.cm.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
+plot(m.height)
+summary(m.height)
+pairs(emmeans(m.height, ~ Serpentine * fun.group))
+
+#m.ldd
+m.ldd <- lm(log(ldd.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
+plot(m.ldd)
+summary(m.ldd)
+pairs(emmeans(m.ldd, ~ Serpentine * fun.group))
+
+
+
+
