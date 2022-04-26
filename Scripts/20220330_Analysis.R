@@ -17,8 +17,8 @@ library(ggfortify)
 Traits <- read.csv("Data/20220329_Seed-Traits_cleaning.csv")
 Cover <- read.csv("Data/Core_All-Years_2021.csv")
 Species <- read.csv("Data/McL_80SitesSpeciesTraits_012615.csv")
-SB <- read.csv("Data/Seedbank-Data_2015 - Seedbank_WateringExp2016_CLEAN.csv")
-#SB <- read.csv("Data/Seedbank_WateringExp2016_CLEAN.csv") # Marina's file path
+#SB <- read.csv("Data/Seedbank-Data_2015 - Seedbank_WateringExp2016_CLEAN.csv")
+SB <- read.csv("Data/Seedbank_WateringExp2016_CLEAN.csv") # Marina's file path
 Plots <- read.csv("Data/WE_Treatment.csv") 
 
 
@@ -77,16 +77,14 @@ nat.inv.cwm <- SB_Traits_joined %>% group_by(nat.inv, Plot, group) %>% summarize
 nat.inv.cwm <- merge(nat.inv.cwm, Plots[,c(1,3)], by = "Plot")
 
 #Forb/Grass
-group.cwm <- SB_Traits_joined %>% group_by(group) %>% summarize(
-  shape.final.cwm = weighted.mean(shape.final, n.seeds),
-  set.time.mpsec.cwm = weighted.mean(set.time.mpsec, n.seeds),
-  mass.morph.mg.cwm = weighted.mean(mass.morph.mg, n.seeds),
-  wing.loading.cwm = weighted.mean(wing.loading, n.seeds),
-  height.cm.cwm = weighted.mean(height.cm, n.seeds),
-  ldd.cwm = weighted.mean(ldd, n.seeds)
-)
-
-
+# group.cwm <- SB_Traits_joined %>% group_by(group) %>% summarize(
+#   shape.final.cwm = weighted.mean(shape.final, n.seeds),
+#   set.time.mpsec.cwm = weighted.mean(set.time.mpsec, n.seeds),
+#   mass.morph.mg.cwm = weighted.mean(mass.morph.mg, n.seeds),
+#   wing.loading.cwm = weighted.mean(wing.loading, n.seeds),
+#   height.cm.cwm = weighted.mean(height.cm, n.seeds),
+#   ldd.cwm = weighted.mean(ldd, n.seeds)
+# )
 
 
 ####PCA####
@@ -145,7 +143,7 @@ ggplot(nat.inv.cwm.sum, aes(x = Serpentine, y = mass.cwm, fill = fun.group)) +
   theme(
     legend.title = element_blank()
   ) +
-  labs(y = "CWM Wing Loading (mass/area)")
+  labs(y = "Mass")
 ##able to delete?
 
 #Wing.bar
@@ -153,12 +151,12 @@ ggplot(nat.inv.cwm.sum, aes(x = Serpentine, y = wing.cwm, fill = fun.group)) +
   geom_bar(stat="identity", position = position_dodge()) +
   geom_errorbar(aes(ymin = wing.cwm - wing.cwm.se, ymax = wing.cwm + wing.cwm.se), position = position_dodge(.9), width = 0.2)
 
-#shape.bar
+#shape.bar # there are only 2 instances of invasive forbs on HS so that's why that error bar is cray
 ggplot(nat.inv.cwm.sum, aes(x = Serpentine, y = shape.cwm, fill = fun.group)) +
   geom_bar(stat="identity", position = position_dodge()) +
   geom_errorbar(aes(ymin = shape.cwm - shape.cwm.se, ymax = shape.cwm + shape.cwm.se), position = position_dodge(.9), width = 0.2)
 
-#ldd.bar
+#ldd.bar this doesnt seem that interesting to me, I wonder if we could show the distribution of vectors in each system somehow? (three panel graph (one per soil type) with distribution of species with various dispersal vector categories in each grouped by fun group?) Could also look at appendage presence
 ggplot(nat.inv.cwm.sum, aes(x = Serpentine, y = ldd.cwm, fill = fun.group)) +
   geom_bar(stat="identity", position = position_dodge()) +
   geom_errorbar(aes(ymin = ldd.cwm - ldd.cwm.se, ymax = ldd.cwm + ldd.cwm.se), position = position_dodge(.9), width = 0.2)
@@ -250,41 +248,47 @@ plot(en)
 nat.inv.cwm$fun.group <- paste(nat.inv.cwm$nat.inv, nat.inv.cwm$group)
 nat.inv.cwm <- filter(nat.inv.cwm, fun.group != "native grass")
 
+# let's remove those two instances, only one seed of each were found
+nat.inv.cwm <- nat.inv.cwm[!(nat.inv.cwm$Serpentine == "HS" & nat.inv.cwm$fun.group == "invasive forb"),]
+
 #m.shape
 m.shape <- lm(log(shape.final.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
 plot(m.shape)
 summary(m.shape)
-pairs(emmeans(m.shape, ~ Serpentine * fun.group))
+pairs(emmeans(m.shape, ~ Serpentine * fun.group), adjust = "BH")
 
 #m.set.time
-m.set.time <- lm(log(set.time.mpsec.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
-plot(m.set.time)
+hist(nat.inv.cwm$set.time.mpsec.cwm)
+m.set.time <- lm(set.time.mpsec.cwm ~ Serpentine * fun.group, nat.inv.cwm)
+plot(fitted(m.set.time), resid(m.set.time))
+qqnorm(resid(m.set.time))
 summary(m.set.time)
-pairs(emmeans(m.set.time, ~ Serpentine * fun.group))
+pairs(emmeans(m.set.time, ~ Serpentine * fun.group), adjust = "BH")
 
 #m.mass
 m.mass <- lm(log(mass.morph.mg.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
-plot(m.mass)
+plot(fitted(m.mass), resid(m.mass))
+qqnorm(resid(m.mass))
 summary(m.mass)
-pairs(emmeans(m.mass, ~ Serpentine * fun.group))
+pairs(emmeans(m.mass, ~ Serpentine * fun.group), adjust = "BH")
 
 #m.wing.loading
 m.wing.loading <- lm(log(wing.loading.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
 plot(m.wing.loading)
 summary(m.wing.loading)
-pairs(emmeans(m.wing.loading, ~ Serpentine * fun.group))
+pairs(emmeans(m.wing.loading, ~ Serpentine * fun.group), adjust = "BH")
 
 #m.height
 m.height <- lm(log(height.cm.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
 plot(m.height)
 summary(m.height)
-pairs(emmeans(m.height, ~ Serpentine * fun.group))
+pairs(emmeans(m.height, ~ Serpentine * fun.group), adjust = "BH")
 
 #m.ldd
-m.ldd <- lm(log(ldd.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
-plot(m.ldd)
-summary(m.ldd)
-pairs(emmeans(m.ldd, ~ Serpentine * fun.group))
+# m.ldd <- lm(log(ldd.cwm) ~ Serpentine * fun.group, nat.inv.cwm)
+# plot(m.ldd)
+# summary(m.ldd)
+# pairs(emmeans(m.ldd, ~ Serpentine * fun.group), adjust = "BH")
 
 
 
